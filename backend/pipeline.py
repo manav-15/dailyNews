@@ -17,16 +17,18 @@ def relevance_score(item: Item, monitor: Monitor) -> int:
 
 
 def _build_topic(monitor: Monitor, items: list[Item]) -> dict:
+    result = llm.summarize_topic(monitor.raw_prompt, items)
+    shorts = result.get("shorts", {})
     return {
         "topic": monitor.raw_prompt,
         "keywords": monitor.keywords or [],
-        "summary": llm.summarize_topic(monitor.raw_prompt, items),
+        "summary": result.get("summary", ""),
         "items": [
             {
                 "id": f"{it.source}:{it.source_id}",
                 "source": it.source,
                 "title": it.title,
-                "short": llm.short_summary(it),
+                "short": shorts.get(f"{it.source}:{it.source_id}") or it.title,
                 "long": it.body or it.title,
                 "url": it.url,
                 "author": it.author,

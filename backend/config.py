@@ -1,13 +1,16 @@
 """Application configuration, read from environment."""
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
 # Storage: SQLite for the zero-dependency demo; swap to Postgres via DATABASE_URL.
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./digest.db")
 
-# LLM config — leave unset to use the deterministic fallback (no API key needed).
-# Set LLM_PROVIDER/LLM_MODEL/LLM_API_KEY to enable a real model (LiteLLM hook).
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "")
-LLM_MODEL = os.getenv("LLM_MODEL", "")
+# LLM config — any OpenAI-compatible /chat/completions endpoint (DeepSeek, OpenAI, Ollama, vLLM, Groq…).
+# Leave LLM_API_KEY unset to use the deterministic fallback (no key needed).
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://api.deepseek.com")
+LLM_MODEL = os.getenv("LLM_MODEL", "deepseek-chat")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 
 # Pipeline limits.

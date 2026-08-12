@@ -48,6 +48,6 @@ npx expo start              # then press `a` (Android) / `i` (iOS) / `w` (web)
 
 ## Notes
 
-- **LLM is abstracted** behind `backend/llm.py` (`LLMService`). With no `LLM_API_KEY` set it uses a deterministic fallback (keyword intent parsing + extractive summaries); set `LLM_PROVIDER`/`LLM_MODEL`/`LLM_API_KEY` to wire a real model (LiteLLM hook).
+- **LLM**: `backend/llm.py` (`LLMService`) talks to any OpenAI-compatible `/chat/completions` endpoint — defaults to **DeepSeek**. Put `LLM_API_KEY` (and optional `LLM_MODEL` / `LLM_BASE_URL`) in `backend/.env` (gitignored). Without a key it falls back to deterministic logic. Reasoning/thinking is disabled by default.
 - Storage defaults to SQLite; set `DATABASE_URL` to use Postgres (pgvector for embeddings later).
 - Sources: Hacker News (Algolia) + arXiv, both free/no-key.
