@@ -1,0 +1,4 @@
+#!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export LLMWIKI_ROOT="$SCRIPT_DIR"
+exec "$SCRIPT_DIR/llmwiki/run" "$@"
