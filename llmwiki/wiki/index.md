@@ -16,3 +16,6 @@ Welcome to the LLMWiki catalog. This catalog is parsed by the LLMWiki engine to 
 
 ## Custom Skills
 - [Example Skill](skills/example-skill/SKILL.md) — Demonstration of agent capabilities and loop policies
+
+## Learnings
+- [Daily News Digest App](learnings/daily-news-digest-app/summary.md) — Plan for a multi-source daily digest app (Expo + FastAPI + LLM pipeline)
