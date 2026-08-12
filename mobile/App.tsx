@@ -16,16 +16,16 @@ import {
 const API_BASE = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
 
 const colors = {
-  bg: '#0b0d10',
-  surface: '#14171c',
-  surfaceAlt: '#1a1e24',
-  border: '#23272f',
-  text: '#e8ebef',
-  textMuted: '#9aa3ad',
-  textFaint: '#6b7480',
-  accent: '#4f8cff',
-  accentText: '#7ea9ff',
-  danger: '#ff6b6b',
+  bg: '#f6f7f8',
+  surface: '#ffffff',
+  surfaceAlt: '#eef0f3',
+  border: '#e3e6ea',
+  text: '#17191c',
+  textMuted: '#4b535d',
+  textFaint: '#7d8793',
+  accent: '#2f6fe4',
+  accentText: '#2f6fe4',
+  danger: '#d64545',
 };
 
 type DigestItem = {
@@ -149,7 +149,7 @@ export default function App() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       <View style={styles.header}>
         <Text style={styles.appTitle}>Daily Digest</Text>

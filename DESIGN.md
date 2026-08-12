@@ -1,33 +1,33 @@
 # Daily Digest — Design System
 
 > Category: News & Media (mobile)
-> Inshorts-style daily news digest. Editorial, scannable, calm. Dark-first, single-accent.
+> Inshorts-style daily news digest. Editorial, scannable, calm. Light, single-accent.
 
 ## 1. Visual Theme & Atmosphere
 
-A calm, editorial reading surface. The page recedes so stories carry the weight: a deep near-black canvas, hairline borders instead of shadows, and one restrained blue accent reserved for actions and selection. Density is moderate — a topic reads as a "section" (synthesis paragraph up top, item rows below), never a wall of identical cards. Content is the hierarchy; chrome is quiet.
+A calm, light editorial reading surface. A near-white canvas with pure-white cards, hairline separators instead of shadows, and one restrained blue accent reserved for actions and selection. Density is moderate — a topic reads as a "section" (synthesis paragraph up top, item rows below), never a wall of identical cards. Content is the hierarchy; chrome is quiet.
 
 **Key characteristics:**
-- Dark-first: deep page background with two stepped surface layers.
+- Light: near-white page background, white cards, one level of elevated surface.
 - Hairline separators (`1px`) do the layering; no heavy shadows, no gradients.
-- One accent (`#4f8cff`) for the primary action, focus, and tappable affordances — used sparingly.
-- Generous vertical rhythm: sections breathe, items are separated by hairline, not by box borders.
+- One accent (`#2f6fe4`) for the primary action, focus, and tappable affordances — used sparingly.
+- Generous vertical rhythm: sections breathe, items are separated by hairline, not box borders.
 - Rounded corners kept small (10–12px) and consistent.
 
 ## 2. Color Palette & Roles
 
 | Token | Value | Role |
 |---|---|---|
-| `bg` | `#0b0d10` | Page background |
-| `surface` | `#14171c` | Topic card surface |
-| `surfaceAlt` | `#1a1e24` | Input / chip / elevated surface |
-| `border` | `#23272f` | Hairline separators, card outline |
-| `text` | `#e8ebef` | Primary text (titles, summaries) |
-| `textMuted` | `#9aa3ad` | Secondary text (short summaries) |
-| `textFaint` | `#6b7480` | Metadata (source · author · time) |
-| `accent` | `#4f8cff` | Primary action, selection, links |
-| `accentText` | `#7ea9ff` | On-dark accent text / topic names |
-| `danger` | `#ff6b6b` | Error state |
+| `bg` | `#f6f7f8` | Page background |
+| `surface` | `#ffffff` | Topic card surface |
+| `surfaceAlt` | `#eef0f3` | Input / chip / elevated surface |
+| `border` | `#e3e6ea` | Hairline separators, card outline |
+| `text` | `#17191c` | Primary text (titles, summaries) |
+| `textMuted` | `#4b535d` | Secondary text (short summaries) |
+| `textFaint` | `#7d8793` | Metadata (source · author · time) |
+| `accent` | `#2f6fe4` | Primary action, selection, links |
+| `accentText` | `#2f6fe4` | Topic names / tappable affordances |
+| `danger` | `#d64545` | Error state |
 
 ## 3. Typography Rules
 
@@ -48,7 +48,7 @@ A calm, editorial reading surface. The page recedes so stories carry the weight:
 - Page horizontal padding: `20px`.
 - Section vertical gap: `24px`.
 - Card padding: `16px`, radius `12px`.
-- Item gap: `12px`, separated by hairline (`1px #23272f`) — no per-item boxes.
+- Item gap: `12px`, separated by hairline (`1px #e3e6ea`) — no per-item boxes.
 - Control row gap: `8px`.
 
 ## 5. Components
@@ -63,4 +63,4 @@ A calm, editorial reading surface. The page recedes so stories carry the weight:
 ## 6. Do / Don't
 
 - Do: hairline separators, one accent, scannable hierarchy, muted metadata.
-- Don't: gradients, heavy shadows, over-rounded cards, stock "glass" effects, more than one accent, text on low-contrast surfaces.
+- Don't: gradients, heavy shadows, over-rounded cards, stock "glass" effects, more than one accent, low-contrast text.
