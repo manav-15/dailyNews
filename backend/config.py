@@ -17,3 +17,4 @@ LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 DEFAULT_SOURCES = ["hackernews", "arxiv"]
 MAX_ITEMS_PER_TOPIC = int(os.getenv("MAX_ITEMS_PER_TOPIC", "8"))
 ITEMS_PER_SOURCE = int(os.getenv("ITEMS_PER_SOURCE", "10"))
+RECENT_WINDOW_HOURS = int(os.getenv("RECENT_WINDOW_HOURS", "24"))
