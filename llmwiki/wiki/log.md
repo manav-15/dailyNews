@@ -11,3 +11,7 @@ This is an append-only log of modifications, updates, and indexing runs performe
 ## [2026-06-29] init | Initialize LLMWiki repository.
 - Created `agents.md`, `index.html`, `README.md`.
 - Created skeleton documents: `welcome.md`, `getting-started.md`, `index.md`, `log.md`.
+
+## [2026-08-12] learn | Learning session: daily-news-digest-app.
+- Discussion, summary, and references stored in `wiki/learnings/daily-news-digest-app/`.
+- Project plan written to `docs/plan.md`.
