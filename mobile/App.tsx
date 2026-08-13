@@ -125,6 +125,7 @@ export default function App() {
   const [theme, setTheme] = useState<ThemeName>('dark');
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [showTopicManager, setShowTopicManager] = useState(false);
+  const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
   const colors = palettes[theme];
 
   const loadTopics = useCallback(async () => {
@@ -195,6 +196,7 @@ export default function App() {
     try {
       await syncTopics(topics.filter((topic) => topic !== prompt));
       if (selectedTopic === prompt) setSelectedTopic(null);
+      setPendingRemoval(null);
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : String(exception));
     } finally {
@@ -291,11 +293,32 @@ export default function App() {
             {topics.length > 0 && (
               <View style={styles.managedTopics}>
                 {topics.map((topic) => (
-                  <Pressable key={topic} onPress={() => removeTopic(topic)} style={[styles.managedTopic, { borderColor: colors.line }]}>
+                  <View key={topic} style={[styles.managedTopic, { borderColor: colors.line }]}>
                     <Text style={[styles.managedTopicText, { color: colors.text }]} numberOfLines={1}>{topic}</Text>
-                    <Text style={[styles.removeText, { color: colors.textFaint }]}>×</Text>
-                  </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${topic}`}
+                      onPress={() => setPendingRemoval(topic)}
+                      style={[styles.removeButton, { borderColor: colors.line }]}
+                    >
+                      <Text style={[styles.removeButtonText, { color: colors.textMuted }]}>Remove</Text>
+                    </Pressable>
+                  </View>
                 ))}
+              </View>
+            )}
+            {pendingRemoval && (
+              <View style={[styles.removeConfirmation, { borderColor: colors.line, backgroundColor: colors.surfaceSoft }]}>
+                <Text style={[styles.removeConfirmationTitle, { color: colors.text }]}>Remove {pendingRemoval}?</Text>
+                <Text style={[styles.removeConfirmationCopy, { color: colors.textMuted }]}>You will stop receiving future briefings for this topic.</Text>
+                <View style={styles.removeConfirmationActions}>
+                  <Pressable disabled={loading} onPress={() => setPendingRemoval(null)} style={[styles.cancelRemovalButton, { borderColor: colors.line }]}>
+                    <Text style={[styles.cancelRemovalText, { color: colors.text }]}>Keep topic</Text>
+                  </Pressable>
+                  <Pressable disabled={loading} onPress={() => removeTopic(pendingRemoval)} style={[styles.confirmRemovalButton, { backgroundColor: colors.danger }, loading && styles.pressed]}>
+                    <Text style={[styles.confirmRemovalText, { color: colors.bg }]}>Remove topic</Text>
+                  </Pressable>
+                </View>
               </View>
             )}
           </View>
@@ -333,9 +356,11 @@ export default function App() {
           {visibleTopics.map((topic, index) => (
             <View key={topic.topic} style={styles.topicSection}>
               {index > 0 && <View style={[styles.sectionRule, { backgroundColor: colors.line }]} />}
-              <View style={styles.topicHeading}>
-                <Text style={[styles.topicTitle, { color: colors.text }]}>{topic.topic}</Text>
-                <Text style={[styles.storyCount, { color: colors.accent }]}>{topic.items.length} {topic.items.length === 1 ? 'story' : 'stories'}</Text>
+              <View style={[styles.topicBand, { backgroundColor: colors.surfaceSoft, borderLeftColor: colors.accent }]}>
+                <Text style={[styles.topicKicker, { color: colors.signal }]}>Topic briefing · {topic.items.length} {topic.items.length === 1 ? 'story' : 'stories'}</Text>
+                <View style={styles.topicHeading}>
+                  <Text style={[styles.topicTitle, { color: colors.text }]}>{topic.topic}</Text>
+                </View>
               </View>
               {topic.summary ? <Text style={[styles.topicSummary, { color: colors.textMuted }]}>{topic.summary}</Text> : null}
               {topic.items.length === 0 ? (
@@ -390,10 +415,19 @@ const styles = StyleSheet.create({
   input: { flex: 1, minHeight: 42, borderWidth: 1, borderRadius: 10, paddingHorizontal: 11, fontSize: 13 },
   addButton: { minHeight: 42, borderRadius: 999, justifyContent: 'center', paddingHorizontal: 14 },
   addButtonText: { fontSize: 13, fontWeight: '700' },
-  managedTopics: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 10 },
-  managedTopic: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 999, paddingVertical: 5, paddingLeft: 10, paddingRight: 8, gap: 5 },
-  managedTopicText: { fontSize: 12, maxWidth: 210 },
-  removeText: { fontSize: 17, lineHeight: 17 },
+  managedTopics: { gap: 7, marginTop: 10 },
+  managedTopic: { maxWidth: '100%', minHeight: 40, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingVertical: 5, paddingLeft: 10, paddingRight: 6, gap: 8 },
+  managedTopicText: { flex: 1, fontSize: 12 },
+  removeButton: { minHeight: 30, borderWidth: 1, borderRadius: 999, justifyContent: 'center', paddingHorizontal: 9 },
+  removeButtonText: { fontSize: 11, fontWeight: '700' },
+  removeConfirmation: { marginTop: 10, borderWidth: 1, borderRadius: 12, padding: 11 },
+  removeConfirmationTitle: { fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }), fontSize: 16, lineHeight: 20 },
+  removeConfirmationCopy: { marginTop: 3, fontSize: 12, lineHeight: 17 },
+  removeConfirmationActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  cancelRemovalButton: { flex: 1, minHeight: 38, borderWidth: 1, borderRadius: 999, justifyContent: 'center', alignItems: 'center' },
+  cancelRemovalText: { fontSize: 12, fontWeight: '700' },
+  confirmRemovalButton: { flex: 1, minHeight: 38, borderRadius: 999, justifyContent: 'center', alignItems: 'center' },
+  confirmRemovalText: { fontSize: 12, fontWeight: '700' },
   topicRailScroll: { marginTop: 17 },
   topicRail: { paddingHorizontal: 20, gap: 7 },
   topicPill: { borderWidth: 1, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 12 },
@@ -403,9 +437,10 @@ const styles = StyleSheet.create({
   feed: { paddingHorizontal: 20, paddingTop: 22 },
   topicSection: { paddingBottom: 28 },
   sectionRule: { height: 1, marginBottom: 24 },
-  topicHeading: { flexDirection: 'row', gap: 10, justifyContent: 'space-between', alignItems: 'baseline' },
-  topicTitle: { flex: 1, fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }), fontSize: 21, lineHeight: 25 },
-  storyCount: { fontSize: 12, fontWeight: '700' },
+  topicBand: { marginBottom: 10, marginHorizontal: -20, paddingTop: 12, paddingBottom: 12, paddingHorizontal: 20, borderLeftWidth: 3 },
+  topicKicker: { marginBottom: 5, fontSize: 10, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase' },
+  topicHeading: { flexDirection: 'row', alignItems: 'baseline' },
+  topicTitle: { flex: 1, fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }), fontSize: 25, lineHeight: 30 },
   topicSummary: { marginTop: 7, marginBottom: 8, fontSize: 14, lineHeight: 21 },
   noStories: { paddingTop: 14, paddingBottom: 4, fontSize: 14 },
   story: { minHeight: 56, paddingVertical: 13, borderTopWidth: 1 },
