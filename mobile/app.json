@@ -3,6 +3,10 @@
     "name": "Daily Digest",
     "slug": "dailynews",
     "version": "1.0.0",
+    "runtimeVersion": { "policy": "sdkVersion" },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
