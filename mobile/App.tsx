@@ -12,8 +12,17 @@ import {
   View,
 } from 'react-native';
 
-// Android emulator reaches the host via 10.0.2.2; iOS simulator / web use localhost.
-const API_BASE = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+const API_BASE =
+  process.env.EXPO_PUBLIC_API_URL ??
+  (Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000');
+const API_KEY = process.env.EXPO_PUBLIC_API_KEY ?? '';
+
+function apiHeaders(): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    ...(API_KEY ? { 'X-API-Key': API_KEY } : {}),
+  };
+}
 
 const colors = {
   bg: '#f6f7f8',
@@ -68,7 +77,7 @@ export default function App() {
 
   const loadTopics = useCallback(async () => {
     try {
-      const r = await fetch(`${API_BASE}/topics`);
+      const r = await fetch(`${API_BASE}/topics`, { headers: apiHeaders() });
       const data = (await r.json()) as { raw_prompt: string }[];
       setTopics(data.map((t) => t.raw_prompt));
     } catch {
@@ -78,7 +87,7 @@ export default function App() {
 
   const loadDigest = useCallback(async () => {
     try {
-      const r = await fetch(`${API_BASE}/digest/today`);
+      const r = await fetch(`${API_BASE}/digest/today`, { headers: apiHeaders() });
       if (r.ok) setDigest(await r.json());
     } catch {
       /* ignore */
@@ -93,7 +102,7 @@ export default function App() {
   const syncTopics = async (next: string[]) => {
     const r = await fetch(`${API_BASE}/topics`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: apiHeaders(),
       body: JSON.stringify({ topics: next.map((t) => ({ raw_prompt: t })) }),
     });
     if (!r.ok) throw new Error(`topics ${r.status}`);
@@ -132,7 +141,7 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch(`${API_BASE}/refresh`, { method: 'POST' });
+      const r = await fetch(`${API_BASE}/refresh`, { method: 'POST', headers: apiHeaders() });
       if (!r.ok) throw new Error(`refresh ${r.status}`);
       setDigest(await r.json());
       loadTopics();

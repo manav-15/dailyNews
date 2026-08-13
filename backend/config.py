@@ -7,6 +7,9 @@ load_dotenv()
 # Storage: SQLite for the zero-dependency demo; swap to Postgres via DATABASE_URL.
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./digest.db")
 
+# API auth — shared key required by the mobile app (empty = no auth, for local dev).
+API_KEY = os.getenv("API_KEY", "")
+
 # LLM config — any OpenAI-compatible /chat/completions endpoint (DeepSeek, OpenAI, Ollama, vLLM, Groq…).
 # Leave LLM_API_KEY unset to use the deterministic fallback (no key needed).
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://api.deepseek.com")
