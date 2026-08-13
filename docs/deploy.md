@@ -29,7 +29,8 @@ This ensures `mobile/.env` exists and runs EAS Build with the `preview` profile 
 Prereqs (one-time):
 ```bash
 npm i -g eas-cli
-eas login          # free Expo account
+eas login            # free Expo account
+eas update:configure # one-time: links the EAS project + sets the updates URL (enables OTA)
 ```
 
 Set these in `mobile/.env` before building:
@@ -57,6 +58,18 @@ npx expo run:android --variant release
 1. Get the `.apk` onto your phone (EAS gives a download link; or AirDrop / Drive / USB for a local build).
 2. Open it → allow **"Install unknown apps"** for the source app.
 3. Open **Daily Digest** — it talks to the Railway URL; the **Refresh digest** button triggers generation on demand (no cron yet).
+
+## 4. OTA updates (no reinstall)
+
+After the first APK install, push **JS-only** changes over the air — no new APK, no store:
+
+```bash
+./scripts/update-app.sh "changed the header"
+# or:
+npx eas update --channel preview --message "changed the header"
+```
+
+The installed app fetches the new bundle on next launch. Native changes (new native modules, `app.json` native keys, SDK bumps) still need a fresh `./scripts/build-apk.sh`.
 
 ## Environment reference
 
