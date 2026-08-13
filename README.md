@@ -43,8 +43,13 @@ npm run web                 # browser preview
 npx expo start              # then press `a` (Android) / `i` (iOS) / `w` (web)
 ```
 
-- Android emulator reaches the backend at `http://10.0.2.2:8000`; iOS simulator/web use `http://localhost:8000`. Change `API_BASE` in `mobile/App.tsx` for other hosts (e.g. a physical device on your LAN).
+- Android emulator reaches the backend at `http://10.0.2.2:8000`; iOS simulator/web use `http://localhost:8000`. Set `EXPO_PUBLIC_API_URL` (in `mobile/.env`) for a deployed backend.
 - The app has a **Refresh digest** button that calls `POST /refresh`, so you can trigger the pipeline on demand during development.
+
+## Deploy
+
+- Backend → Railway + Postgres; Android APK → `./scripts/build-apk.sh` (EAS Build).
+- Full steps: [`docs/deploy.md`](docs/deploy.md).
 
 ## Notes
 
