@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Database (SQLite demo)
+*.db
+*.db-journal
+
+# Node / Expo
+node_modules/
+.expo/
+dist/
+web-build/
+*.log
+
+# Env / secrets
+.env
+.env.*
+
+# OS
+.DS_Store
