@@ -7,6 +7,13 @@ load_dotenv()
 # Storage: SQLite for the zero-dependency demo; swap to Postgres via DATABASE_URL.
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./digest.db")
 
+# SQLAlchemy resolves a bare "postgresql://" scheme to the psycopg2 driver by
+# default; we ship psycopg (v3), so point Postgres URLs at the modern driver.
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+
 # API auth — shared key required by the mobile app (empty = no auth, for local dev).
 API_KEY = os.getenv("API_KEY", "")
 
