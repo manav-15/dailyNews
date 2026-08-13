@@ -55,7 +55,7 @@ type DigestItem = {
 ### Digest home
 
 1. Show the product name and `generated_at` when present; otherwise say “Your daily briefing.”
-2. Keep topic management available, but subordinate it to reading: `Follow a topic` opens the existing topic input; removing a topic requires an explicit remove affordance rather than tapping its reading navigation chip.
+2. Keep topic management available but subordinate it to reading: a clearly labeled `Topics · <count>` control in the home action row opens the topic-management sheet. The sheet is the single destination for adding and removing subscriptions; reading-navigation chips never remove topics.
 3. Render topic sections in the order returned by `digest.topics`.
 4. Each topic section shows: topic name, story count, optional topic synthesis, then all returned story rows.
 5. A six-story topic should fit naturally in the feed. For 7–8 returned items, render all items without truncation unless an explicit “Show all” interaction is designed and implemented.
@@ -91,7 +91,7 @@ A warm personal front page. This is the best all-topics default: a reader can sc
 DailyNews                                      Thu, Aug 14
 Updated 08:15
 
-Follow a topic                                 Refresh briefing
+Topics · 3                                     Refresh briefing
 
 AI & Computing · 6 stories
 One-to-two sentence topic synthesis.
@@ -180,4 +180,3 @@ Reuters · Author · Aug 14
 4. Do not assume a URL, author, date, summary, or title exists.
 5. Do not use `long` or `score` in the list UI.
 6. Verify these cases: no digest; no topics; a topic with 0, 1, 5, 6, and 8 items; missing `short`; `short === title`; missing `url`; long topic/headline; small screen.
-

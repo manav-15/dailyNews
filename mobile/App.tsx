@@ -1,8 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Linking,
+  PanResponder,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -129,7 +132,28 @@ export default function App() {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [showTopicManager, setShowTopicManager] = useState(false);
   const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
+  const sheetTranslateY = useRef(new Animated.Value(0)).current;
   const colors = palettes[theme];
+
+  const closeTopicManager = () => {
+    setPendingRemoval(null);
+    setShowTopicManager(false);
+  };
+
+  const sheetPanResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gesture) => gesture.dy > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+      onPanResponderMove: (_, gesture) => sheetTranslateY.setValue(Math.max(0, gesture.dy)),
+      onPanResponderRelease: (_, gesture) => {
+        if (gesture.dy > 90 || gesture.vy > 0.85) {
+          Animated.timing(sheetTranslateY, { toValue: 500, duration: 160, useNativeDriver: true }).start(closeTopicManager);
+          return;
+        }
+        Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true }).start();
+      },
+      onPanResponderTerminate: () => Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true }).start(),
+    }),
+  ).current;
 
   const loadTopics = useCallback(async () => {
     try {
@@ -280,10 +304,15 @@ export default function App() {
         <View style={styles.actions}>
           <Pressable
             accessibilityRole="button"
-            onPress={() => setShowTopicManager((value) => !value)}
-            style={[styles.followButton, { borderColor: colors.line, backgroundColor: colors.surface }]}
+            accessibilityLabel={`Manage ${topics.length} followed topics`}
+            onPress={() => {
+              setPendingRemoval(null);
+              sheetTranslateY.setValue(0);
+              setShowTopicManager(true);
+            }}
+            style={[styles.topicsButton, { borderColor: colors.line, backgroundColor: colors.surfaceSoft }]}
           >
-            <Text style={[styles.followButtonText, { color: colors.text }]}>{showTopicManager ? 'Close topics' : '+ Follow a topic'}</Text>
+            <Text style={[styles.topicsButtonText, { color: colors.text }]}>Topics · {topics.length}</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -294,56 +323,6 @@ export default function App() {
             {loading ? <ActivityIndicator color={colors.accentText} /> : <Text style={[styles.refreshText, { color: colors.accentText }]}>Refresh</Text>}
           </Pressable>
         </View>
-
-        {showTopicManager && (
-          <View style={[styles.topicManager, { borderColor: colors.line, backgroundColor: colors.surface }]}>
-            <View style={styles.composer}>
-              <TextInput
-                style={[styles.input, { color: colors.text, backgroundColor: colors.surfaceSoft, borderColor: colors.line }]}
-                placeholder="Follow a topic (e.g. ‘oracle cloud’)"
-                placeholderTextColor={colors.textFaint}
-                value={input}
-                onChangeText={setInput}
-                onSubmitEditing={addTopic}
-                returnKeyType="done"
-              />
-              <Pressable disabled={loading} onPress={addTopic} style={[styles.addButton, { backgroundColor: colors.signal }, loading && styles.pressed]}>
-                <Text style={[styles.addButtonText, { color: theme === 'dark' ? '#25221F' : '#FFF9F0' }]}>Add</Text>
-              </Pressable>
-            </View>
-            {topics.length > 0 && (
-              <View style={styles.managedTopics}>
-                {topics.map((topic) => (
-                  <View key={topic} style={[styles.managedTopic, { borderColor: colors.line }]}>
-                    <Text style={[styles.managedTopicText, { color: colors.text }]} numberOfLines={1}>{topic}</Text>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Remove ${topic}`}
-                      onPress={() => setPendingRemoval(topic)}
-                      style={[styles.removeButton, { borderColor: colors.line }]}
-                    >
-                      <Text style={[styles.removeButtonText, { color: colors.textMuted }]}>Remove</Text>
-                    </Pressable>
-                  </View>
-                ))}
-              </View>
-            )}
-            {pendingRemoval && (
-              <View style={[styles.removeConfirmation, { borderColor: colors.line, backgroundColor: colors.surfaceSoft }]}>
-                <Text style={[styles.removeConfirmationTitle, { color: colors.text }]}>Remove {pendingRemoval}?</Text>
-                <Text style={[styles.removeConfirmationCopy, { color: colors.textMuted }]}>You will stop receiving future briefings for this topic.</Text>
-                <View style={styles.removeConfirmationActions}>
-                  <Pressable disabled={loading} onPress={() => setPendingRemoval(null)} style={[styles.cancelRemovalButton, { borderColor: colors.line }]}>
-                    <Text style={[styles.cancelRemovalText, { color: colors.text }]}>Keep topic</Text>
-                  </Pressable>
-                  <Pressable disabled={loading} onPress={() => removeTopic(pendingRemoval)} style={[styles.confirmRemovalButton, { backgroundColor: colors.danger }, loading && styles.pressed]}>
-                    <Text style={[styles.confirmRemovalText, { color: colors.bg }]}>Remove topic</Text>
-                  </Pressable>
-                </View>
-              </View>
-            )}
-          </View>
-        )}
 
         {digestTopics.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topicRail} style={styles.topicRailScroll}>
@@ -370,8 +349,8 @@ export default function App() {
 
         {error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
 
-        {!digest && !loading && <Text style={[styles.empty, { color: colors.textMuted }]}>Follow a topic, then refresh your first briefing.</Text>}
-        {digest && digestTopics.length === 0 && <Text style={[styles.empty, { color: colors.textMuted }]}>No topics yet — follow one above, then refresh.</Text>}
+        {!digest && !loading && <Text style={[styles.empty, { color: colors.textMuted }]}>Open Topics to follow what you want to read, then refresh your first briefing.</Text>}
+        {digest && digestTopics.length === 0 && <Text style={[styles.empty, { color: colors.textMuted }]}>No topics yet — open Topics, add one, then refresh.</Text>}
 
         <View style={styles.feed}>
           {visibleTopics.map((topic, index) => (
@@ -411,6 +390,83 @@ export default function App() {
           ))}
         </View>
       </ScrollView>
+
+      <Modal
+        animationType="slide"
+        transparent
+        visible={showTopicManager}
+        onRequestClose={closeTopicManager}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close topic manager"
+            onPress={closeTopicManager}
+            style={styles.modalBackdrop}
+          />
+          <Animated.View style={[styles.topicSheet, { backgroundColor: colors.surfaceSoft, borderColor: colors.line, transform: [{ translateY: sheetTranslateY }] }]}>
+            <View {...sheetPanResponder.panHandlers} style={styles.sheetDragArea}>
+              <View style={[styles.sheetHandle, { backgroundColor: colors.textFaint }]} />
+            </View>
+            <View style={styles.sheetHeader}>
+              <View>
+                <Text style={[styles.sheetTitle, { color: colors.text }]}>Your topics</Text>
+                <Text style={[styles.sheetSubtitle, { color: colors.textMuted }]}>Add or remove what appears in your daily briefing.</Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close topic manager"
+                onPress={closeTopicManager}
+              >
+                <Text style={[styles.doneText, { color: colors.signal }]}>Done</Text>
+              </Pressable>
+            </View>
+            <View style={styles.composer}>
+              <TextInput
+                style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.line }]}
+                placeholder="Add a topic (e.g. ‘oracle cloud’)"
+                placeholderTextColor={colors.textFaint}
+                value={input}
+                onChangeText={setInput}
+                onSubmitEditing={addTopic}
+                returnKeyType="done"
+              />
+              <Pressable disabled={loading} onPress={addTopic} style={[styles.addButton, { backgroundColor: colors.signal }, loading && styles.pressed]}>
+                <Text style={[styles.addButtonText, { color: theme === 'dark' ? '#25221F' : '#FFF9F0' }]}>Add</Text>
+              </Pressable>
+            </View>
+            <ScrollView contentContainerStyle={styles.managedTopics} showsVerticalScrollIndicator={false}>
+              {topics.map((topic) => (
+                <View key={topic} style={[styles.managedTopic, { borderColor: colors.line, backgroundColor: colors.surfaceSoft }]}>
+                  <Text style={[styles.managedTopicText, { color: colors.text }]} numberOfLines={1}>{topic}</Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${topic}`}
+                    onPress={() => setPendingRemoval(topic)}
+                    style={[styles.removeButton, { borderColor: colors.danger }]}
+                  >
+                    <Text style={[styles.removeButtonText, { color: colors.danger }]}>Remove</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </ScrollView>
+            {pendingRemoval && (
+              <View style={[styles.removeConfirmation, { borderColor: colors.line, backgroundColor: colors.surface }]}>
+                <Text style={[styles.removeConfirmationTitle, { color: colors.text }]}>Remove {pendingRemoval}?</Text>
+                <Text style={[styles.removeConfirmationCopy, { color: colors.textMuted }]}>You will stop receiving future briefings for this topic. Today’s stories stay in your digest.</Text>
+                <View style={styles.removeConfirmationActions}>
+                  <Pressable disabled={loading} onPress={() => setPendingRemoval(null)} style={[styles.cancelRemovalButton, { borderColor: colors.line }]}>
+                    <Text style={[styles.cancelRemovalText, { color: colors.text }]}>Keep topic</Text>
+                  </Pressable>
+                  <Pressable disabled={loading} onPress={() => removeTopic(pendingRemoval)} style={[styles.confirmRemovalButton, { backgroundColor: colors.danger }, loading && styles.pressed]}>
+                    <Text style={[styles.confirmRemovalText, { color: colors.bg }]}>Remove topic</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+          </Animated.View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -427,16 +483,24 @@ const styles = StyleSheet.create({
   themeOptionText: { fontSize: 11, fontWeight: '700' },
   divider: { height: 2, marginHorizontal: 20, marginTop: 20 },
   actions: { paddingHorizontal: 20, paddingTop: 16, flexDirection: 'row', gap: 8 },
-  followButton: { flex: 1, minHeight: 44, borderWidth: 1, borderRadius: 999, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 14 },
-  followButtonText: { fontSize: 14, fontWeight: '600' },
+  topicsButton: { flex: 1, minHeight: 44, borderWidth: 1, borderRadius: 999, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 14 },
+  topicsButtonText: { fontSize: 14, fontWeight: '700' },
   refreshButton: { minHeight: 44, minWidth: 92, borderRadius: 999, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 },
   refreshText: { fontSize: 14, fontWeight: '700' },
-  topicManager: { marginHorizontal: 20, marginTop: 12, padding: 12, borderWidth: 1, borderRadius: 14 },
+  modalOverlay: { flex: 1, position: 'relative', justifyContent: 'flex-end', backgroundColor: 'rgba(0, 0, 0, 0.48)' },
+  modalBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 1 },
+  topicSheet: { zIndex: 2, elevation: 2, maxHeight: '82%', borderTopWidth: 1, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 28 },
+  sheetDragArea: { alignSelf: 'stretch', alignItems: 'center', paddingBottom: 2 },
+  sheetHandle: { alignSelf: 'center', width: 32, height: 4, borderRadius: 99, marginBottom: 13 },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 18 },
+  sheetTitle: { fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }), fontSize: 23, lineHeight: 28 },
+  sheetSubtitle: { maxWidth: 250, marginTop: 3, fontSize: 13, lineHeight: 18 },
+  doneText: { paddingTop: 5, fontSize: 14, fontWeight: '700' },
   composer: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   input: { flex: 1, minHeight: 42, borderWidth: 1, borderRadius: 10, paddingHorizontal: 11, fontSize: 13 },
   addButton: { minHeight: 42, borderRadius: 999, justifyContent: 'center', paddingHorizontal: 14 },
   addButtonText: { fontSize: 13, fontWeight: '700' },
-  managedTopics: { gap: 7, marginTop: 10 },
+  managedTopics: { gap: 8, paddingTop: 14, paddingBottom: 4 },
   managedTopic: { maxWidth: '100%', minHeight: 40, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingVertical: 5, paddingLeft: 10, paddingRight: 6, gap: 8 },
   managedTopicText: { flex: 1, fontSize: 12 },
   removeButton: { minHeight: 30, borderWidth: 1, borderRadius: 999, justifyContent: 'center', paddingHorizontal: 9 },
