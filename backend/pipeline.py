@@ -6,14 +6,8 @@ from sqlalchemy.orm import Session
 import config
 from adapters import ADAPTERS, Item
 from llm import llm
+from matching import BM25, build_query, tokenize
 from models import Digest, Item as ItemModel, Monitor, User
-
-
-def relevance_score(item: Item, monitor: Monitor) -> int:
-    """Keyword-overlap score (embeddings/LLM gate are the production upgrade)."""
-    text = f"{item.title or ''} {item.body or ''}".lower()
-    keywords = monitor.keywords or []
-    return sum(1 for kw in keywords if kw and kw.lower() in text)
 
 
 def _build_topic(monitor: Monitor, items: list[Item]) -> dict:
@@ -78,10 +72,24 @@ def run_pipeline(user_id: int, db: Session) -> dict:
             )
     db.commit()
 
+    # Build BM25 corpus statistics once from the shared item cache (stable
+    # document frequencies), then rank per monitor.
+    corpus = [
+        tokenize(f"{row.title or ''} {row.body or ''}")
+        for row in db.query(ItemModel).all()
+    ]
+    scorer = BM25(corpus)
+
     # Rank per monitor and assemble the digest.
     topics = []
     for monitor in monitors:
-        scored = [(relevance_score(it, monitor), it) for it in collected.values() if relevance_score(it, monitor) > 0]
+        query = build_query(monitor.keywords or [monitor.raw_prompt])
+        scored = []
+        for item in collected.values():
+            text = f"{item.title or ''} {item.body or ''}"
+            score = scorer.score(query, tokenize(text), text)
+            if score > 0:
+                scored.append((score, item))
         scored.sort(key=lambda pair: (-pair[0], pair[1].published_at or ""))
         top = [it for _, it in scored[: config.MAX_ITEMS_PER_TOPIC]]
         topics.append(_build_topic(monitor, top))
