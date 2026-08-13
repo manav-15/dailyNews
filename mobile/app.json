@@ -3,18 +3,22 @@
     "name": "Daily Digest",
     "slug": "dailynews",
     "version": "1.0.0",
-    "runtimeVersion": { "policy": "sdkVersion" },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "updates": {
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/9b1bee07-e0af-4b94-ad7f-061147a6022b"
     },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "backgroundColor": "#0f1115",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#f6f7f8",
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.dailynews.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -25,6 +29,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9b1bee07-e0af-4b94-ad7f-061147a6022b"
+      }
+    },
+    "owner": "chiraniamanavs-team"
   }
 }
