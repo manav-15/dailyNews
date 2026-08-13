@@ -53,6 +53,8 @@ def _is_fresh(generated_at: str | None) -> bool:
         ts = datetime.fromisoformat(generated_at)
     except ValueError:
         return False
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
     age = (datetime.now(timezone.utc) - ts).total_seconds()
     return 0 <= age < config.REFRESH_CACHE_TTL_SECONDS
 
@@ -131,7 +133,7 @@ def refresh(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     today = _today()
 
     cached = cache.get(_key(FIXED_USER_ID, today))
-    if cached is not None:
+    if cached is not None and _is_fresh(cached.get("generated_at")):
         return cached
 
     digest = db.query(Digest).filter(Digest.user_id == FIXED_USER_ID, Digest.date == today).first()
@@ -148,14 +150,11 @@ def refresh(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
 
 @app.get("/digest/today", dependencies=[Depends(require_api_key)])
 def digest_today(db: Session = Depends(get_db)):
+    if inflight.is_active(FIXED_USER_ID):
+        raise HTTPException(status_code=404, detail="refresh in progress; retry shortly")
     content = _get_digest(FIXED_USER_ID, _today(), db)
     if content is None:
-        detail = (
-            "refresh in progress; retry shortly"
-            if inflight.is_active(FIXED_USER_ID)
-            else "no digest yet; POST /refresh to generate"
-        )
-        raise HTTPException(status_code=404, detail=detail)
+        raise HTTPException(status_code=404, detail="no digest yet; POST /refresh to generate")
     return content
 
 
