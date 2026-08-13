@@ -1,8 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Linking,
+  PanResponder,
   Modal,
   Platform,
   Pressable,
@@ -127,7 +129,28 @@ export default function App() {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [showTopicManager, setShowTopicManager] = useState(false);
   const [pendingRemoval, setPendingRemoval] = useState<string | null>(null);
+  const sheetTranslateY = useRef(new Animated.Value(0)).current;
   const colors = palettes[theme];
+
+  const closeTopicManager = () => {
+    setPendingRemoval(null);
+    setShowTopicManager(false);
+  };
+
+  const sheetPanResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gesture) => gesture.dy > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+      onPanResponderMove: (_, gesture) => sheetTranslateY.setValue(Math.max(0, gesture.dy)),
+      onPanResponderRelease: (_, gesture) => {
+        if (gesture.dy > 90 || gesture.vy > 0.85) {
+          Animated.timing(sheetTranslateY, { toValue: 500, duration: 160, useNativeDriver: true }).start(closeTopicManager);
+          return;
+        }
+        Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true }).start();
+      },
+      onPanResponderTerminate: () => Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true }).start(),
+    }),
+  ).current;
 
   const loadTopics = useCallback(async () => {
     try {
@@ -263,6 +286,7 @@ export default function App() {
             accessibilityLabel={`Manage ${topics.length} followed topics`}
             onPress={() => {
               setPendingRemoval(null);
+              sheetTranslateY.setValue(0);
               setShowTopicManager(true);
             }}
             style={[styles.topicsButton, { borderColor: colors.line, backgroundColor: colors.surfaceSoft }]}
@@ -350,23 +374,19 @@ export default function App() {
         animationType="slide"
         transparent
         visible={showTopicManager}
-        onRequestClose={() => {
-          setPendingRemoval(null);
-          setShowTopicManager(false);
-        }}
+        onRequestClose={closeTopicManager}
       >
         <View style={styles.modalOverlay}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Close topic manager"
-            onPress={() => {
-              setPendingRemoval(null);
-              setShowTopicManager(false);
-            }}
+            onPress={closeTopicManager}
             style={styles.modalBackdrop}
           />
-          <View style={[styles.topicSheet, { backgroundColor: colors.surfaceSoft, borderColor: colors.line }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.textFaint }]} />
+          <Animated.View style={[styles.topicSheet, { backgroundColor: colors.surfaceSoft, borderColor: colors.line, transform: [{ translateY: sheetTranslateY }] }]}>
+            <View {...sheetPanResponder.panHandlers} style={styles.sheetDragArea}>
+              <View style={[styles.sheetHandle, { backgroundColor: colors.textFaint }]} />
+            </View>
             <View style={styles.sheetHeader}>
               <View>
                 <Text style={[styles.sheetTitle, { color: colors.text }]}>Your topics</Text>
@@ -375,10 +395,7 @@ export default function App() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Close topic manager"
-                onPress={() => {
-                  setPendingRemoval(null);
-                  setShowTopicManager(false);
-                }}
+                onPress={closeTopicManager}
               >
                 <Text style={[styles.doneText, { color: colors.signal }]}>Done</Text>
               </Pressable>
@@ -426,7 +443,7 @@ export default function App() {
                 </View>
               </View>
             )}
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>
@@ -452,6 +469,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, position: 'relative', justifyContent: 'flex-end', backgroundColor: 'rgba(0, 0, 0, 0.48)' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 1 },
   topicSheet: { zIndex: 2, elevation: 2, maxHeight: '82%', borderTopWidth: 1, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 28 },
+  sheetDragArea: { alignSelf: 'stretch', alignItems: 'center', paddingBottom: 2 },
   sheetHandle: { alignSelf: 'center', width: 32, height: 4, borderRadius: 99, marginBottom: 13 },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 18 },
   sheetTitle: { fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }), fontSize: 23, lineHeight: 28 },
