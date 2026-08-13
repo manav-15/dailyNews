@@ -12,8 +12,8 @@
     },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "backgroundColor": "#f6f7f8",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#25221F",
     "ios": {
       "supportsTablet": true
     },
