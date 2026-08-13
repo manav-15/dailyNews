@@ -23,6 +23,9 @@ LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://api.deepseek.com")
 LLM_MODEL = os.getenv("LLM_MODEL", "deepseek-chat")
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 
+# Digest cache — how long a generated digest is reused before re-running (min 300).
+REFRESH_CACHE_TTL_SECONDS = max(300, int(os.getenv("REFRESH_CACHE_TTL_SECONDS", "300")))
+
 # Pipeline limits.
 DEFAULT_SOURCES = ["hackernews", "arxiv"]
 MAX_ITEMS_PER_TOPIC = int(os.getenv("MAX_ITEMS_PER_TOPIC", "8"))

@@ -6,7 +6,7 @@ reflects the latest news rather than evergreen / back-catalog content.
 import time
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from typing import List, Optional
 
@@ -38,14 +38,20 @@ def _is_recent(iso: str, cutoff_ts: int) -> bool:
     if not iso:
         return False
     try:
-        return datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp() >= cutoff_ts
+        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.timestamp() >= cutoff_ts
     except ValueError:
         return True  # unparseable -> keep rather than drop blindly
 
 
 def _rfc2822_ts(datestr: str) -> Optional[float]:
     try:
-        return parsedate_to_datetime(datestr).timestamp()
+        dt = parsedate_to_datetime(datestr)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.timestamp()
     except (TypeError, ValueError, OverflowError):
         return None
 

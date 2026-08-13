@@ -20,6 +20,9 @@ const API_BASE =
   (Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000');
 const API_KEY = process.env.EXPO_PUBLIC_API_KEY ?? '';
 
+const POLL_INTERVAL_MS = 2000;
+const POLL_MAX_ATTEMPTS = 30; // ~60s, well inside the backend's 5-minute cache TTL
+
 const palettes = {
   dark: {
     bg: '#25221F',
@@ -228,13 +231,31 @@ export default function App() {
     }
   };
 
+  const pollForDigest = async (): Promise<void> => {
+    for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
+      const response = await fetch(`${API_BASE}/digest/today`, { headers: apiHeaders() });
+      if (response.ok) {
+        setDigest(await response.json());
+        return;
+      }
+      if (response.status !== 404) throw new Error(`digest ${response.status}`);
+      await new Promise<void>((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    }
+    throw new Error('Refresh timed out — try again');
+  };
+
   const refresh = async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await fetch(`${API_BASE}/refresh`, { method: 'POST', headers: apiHeaders() });
-      if (!response.ok) throw new Error(`refresh ${response.status}`);
-      setDigest(await response.json());
+      if (response.status === 200) {
+        setDigest(await response.json()); // cached/fresh — immediate
+      } else if (response.status === 202) {
+        await pollForDigest(); // async run — poll until ready
+      } else {
+        throw new Error(`refresh ${response.status}`);
+      }
       await loadTopics();
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : String(exception));
@@ -467,7 +488,7 @@ const styles = StyleSheet.create({
   refreshButton: { minHeight: 44, minWidth: 92, borderRadius: 999, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 },
   refreshText: { fontSize: 14, fontWeight: '700' },
   modalOverlay: { flex: 1, position: 'relative', justifyContent: 'flex-end', backgroundColor: 'rgba(0, 0, 0, 0.48)' },
-  modalBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 1 },
+  modalBackdrop: { ...StyleSheet.absoluteFill, zIndex: 1 },
   topicSheet: { zIndex: 2, elevation: 2, maxHeight: '82%', borderTopWidth: 1, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 28 },
   sheetDragArea: { alignSelf: 'stretch', alignItems: 'center', paddingBottom: 2 },
   sheetHandle: { alignSelf: 'center', width: 32, height: 4, borderRadius: 99, marginBottom: 13 },
