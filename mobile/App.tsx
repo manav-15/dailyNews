@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
   refreshButton: { minHeight: 44, minWidth: 92, borderRadius: 999, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 },
   refreshText: { fontSize: 14, fontWeight: '700' },
   modalOverlay: { flex: 1, position: 'relative', justifyContent: 'flex-end', backgroundColor: 'rgba(0, 0, 0, 0.48)' },
-  modalBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 1 },
+  modalBackdrop: { ...StyleSheet.absoluteFill, zIndex: 1 },
   topicSheet: { zIndex: 2, elevation: 2, maxHeight: '82%', borderTopWidth: 1, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 28 },
   sheetDragArea: { alignSelf: 'stretch', alignItems: 'center', paddingBottom: 2 },
   sheetHandle: { alignSelf: 'center', width: 32, height: 4, borderRadius: 99, marginBottom: 13 },
