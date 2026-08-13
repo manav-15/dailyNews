@@ -1,7 +1,7 @@
 # Daily News Digest App — Project Plan
 
 > Status: v1 plan, locked after design discussion (see `llmwiki/wiki/learnings/daily-news-digest-app/`).
-> Last updated: 2026-08-12
+> Last updated: 2026-08-13
 
 ## 1. Overview
 
@@ -256,3 +256,56 @@ Levers:
 - Push notifications (Expo Push) and per-user timezone scheduling.
 - Deployment to VPS / managed platform.
 - Local LLM serving (localLlm stack) behind `LLMService`.
+
+---
+
+## 16. Retrieval & matching — staged roadmap
+
+How items are matched to a monitor and ranked into the digest. **Tier 1 is
+implemented** (`backend/matching.py`); higher tiers are the long-term plan and
+plug in behind the same `BM25.score` interface so `pipeline.py` keeps its shape.
+
+### Current state — Tier 1 (implemented 2026-08-13)
+
+Token-boundary lexical matching weighted by BM25, replacing the v1
+substring-overlap `relevance_score`.
+
+- **Tokenize** — lowercase, split on word boundaries (`[a-z0-9]+`), drop the
+  shared stopword list (`llm.STOPWORDS`). Fixes `"ai"` matching `said`/`chair`.
+- **Keyword decomposition** — a phrase keyword (`"oracle corp"`) contributes its
+  content words (`oracle`, `corp`) *and* the whole phrase, so phrase monitors
+  still match single-word mentions (`"Oracle"`).
+- **BM25 weighting** — `score = Σ idf(t)·tf_norm(t)` over content words, plus a
+  fixed `PHRASE_BONUS` per exact phrase found. IDF is computed over the shared
+  item cache, so common terms (`ai` in a tech corpus) are downweighted and rare
+  terms rewarded.
+- **Deterministic & offline** — no model, no network; same fallback story as
+  the rest of the pipeline.
+
+Deliberately **no stemming yet**: word boundaries + IDF + phrase bonus capture
+most of the value, and a naive stemmer mis-joins `corp`/`corporation`, which the
+phrase check already covers. Known Tier-1 limit: compound tokens — `"ai"` does
+not match `"OpenAI"` (one token) — is a recall gap Tier 2 embeddings close.
+
+### Long-term tiers
+
+| Tier | Change | Buys | Cost / note |
+|---|---|---|---|
+| 2 | Dense embeddings — add `LLMService.embed()`; embed monitor once at add-time, item once at cache-insert | synonymy (`AI` ↔ `artificial intelligence`), paraphrase, compounds | needs an embedding model + vector store (pgvector); loses offline determinism unless a local model |
+| 3 | Hybrid — `α·BM25 + (1−α)·cosine` | exact terms + semantic recall combined | the production sparse+dense blend; tune α on the eval set |
+| 4 | Cross-encoder reranker / LLM y/n gate on top-K borderline items | precision | per-pair cost → gate only, never the primary scorer |
+| 5 | NER + entity resolver (spaCy/GLiNER → ORCL/QID) | disambiguates "Oracle" company vs "oracle bones"; unlocks market data | the plan's entity bridge |
+
+### Evaluation (applies to every tier)
+
+Measure on the golden set (§10): **precision@8** (the user sees only the top
+few), recall, nDCG. Every tier change must beat Tier 1 on the same labeled set
+before shipping; Tier 1 is the cheap baseline to beat.
+
+### Decisions log additions
+
+| # | Decision | Choice |
+|---|---|---|
+| 11 | Matching corpus for IDF | shared item cache (stable, reuse-friendly) |
+| 12 | Stemming | deferred — word boundaries + phrase bonus first |
+| 13 | Phrase signal | exact-phrase bonus, not a separate embedding |
